@@ -29,6 +29,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Clang 23
+        if: matrix.config.name == 'Windows'
+        shell: pwsh
+        run: |
+          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/clang%2Bllvm-23.1.5-x86_64-pc-windows-msvc.tar.xz"
+          $archive = "$env:RUNNER_TEMP\clang23.tar.xz"
+          $dest = "$env:RUNNER_TEMP\clang23"
+
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          tar -xf $archive -C $dest
+
+          $folder = Get-ChildItem $dest -Directory | Select-Object -First 1
+          $bin = Join-Path $folder.FullName "bin"
+
+          $bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          & "$bin\clang++.exe" --version
+
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
